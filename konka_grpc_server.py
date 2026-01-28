@@ -76,7 +76,8 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
             img = np.frombuffer(color_img, dtype=np.uint8).reshape(self.original_height, self.original_width, 3)
 
             # 判断任务类型
-            task_type = 'segment' if request.requiresMasks else 'detect'
+            # task_type = 'segment' if request.requiresMasks else 'detect'
+            task_type = 'segment'
 
             # 初始化模型类（首次或切换任务时）
             if not self.pipeline_initialized or self.current_task != task_type:

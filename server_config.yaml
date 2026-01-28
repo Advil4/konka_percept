@@ -5,7 +5,7 @@ DEVICE: "cuda:0"
 model_cfg:
   iou_threshold: 0.45
   conf_threshold: 0.25
-  model_seg: "trt_engines/yoloe-11l-merged-cv6-pf-seg.engine"
+  model_seg: "trt_engines/yoloe-11l-merged-seg.engine"
   model_det: "trt_engines/yoloe-v8l-det.engine"
   model_dual: True
 

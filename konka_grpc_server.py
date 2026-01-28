@@ -42,10 +42,9 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
         self.vocab = load_vocab()
         # 原始图像默认尺寸
         self.original_width, self.original_height = 480, 640
-        # self.original_width, self.original_height = 378, 672
 
         # 计算 padding（取图像宽高中较大值的 20%）
-        self.padding = int(max(self.original_width, self.original_height) * 0.4)
+        self.padding = int(max(self.original_width, self.original_height) * 0)
 
         # 扩展后的尺寸
         self.extended_width = self.original_width + 2 * self.padding
@@ -171,8 +170,8 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                         cv2.rectangle(extended_img, (x1, y1), (x2, y2), color, 2)
 
                         # 绘制标签文字
-                        cv2.putText(extended_img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                    color, 2)
+                        # cv2.putText(extended_img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                        #             color, 2)
 
                         # 绘制mask部分
                         if masks_coords_visual is not None and mask_size > 0:
@@ -209,8 +208,8 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                         label = f"{self.vocab[cls_id]}_{conf:.2f}_{track_id}" if cls_id < len(
                             self.vocab) else f"ID:{track_id}"
                         cv2.rectangle(extended_img, (x1, y1), (x2, y2), color, 2)
-                        cv2.putText(extended_img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                    color, 2)
+                        # cv2.putText(extended_img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                        #             color, 2)
 
                 if self.img_show:
                     cv2.imshow("Result", extended_img)

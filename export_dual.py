@@ -15,8 +15,8 @@ model = DualBranchModel(
 
 # 先加载权重
 model._load_dual_weights(
-    general_weights="/home/ubuntu/project/konkaV2.0_local_sit/trt_engines/temp/yoloe-11l-seg.pt",
-    gripper_weights="/home/ubuntu/project/konkaV2.0_local_sit/trt_engines/temp/yoloe-11l-gripper-seg.pt"
+    general_weights="trt_engines/temp/yoloe-11l-seg.pt",
+    gripper_weights="trt_engines/temp/yoloe-11l-gripper-seg.pt"
 )
 
 # 详细验证权重是否已加载

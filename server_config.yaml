@@ -1,0 +1,26 @@
+### konkaV2.0 server configuration file for konka_grpc_server.py ###
+
+DEVICE: "cuda:0"
+
+model_cfg:
+  iou_threshold: 0.45
+  conf_threshold: 0.25
+  model_seg: "trt_engines/yoloe-11l-merged-cv6-pf-seg.engine"
+  model_det: "trt_engines/yoloe-v8l-det.engine"
+  model_dual: True
+
+visual_cfg:
+  visual: True
+  video_save: True
+  img_show: True
+  img_save: False
+  output_path: "results/output.avi"
+  images_path: "results/images"
+
+
+server_cfg:
+  server_ip: "0.0.0.0"
+  server_port: "50051"
+  max_send_message_length: 1 * 1024 * 1024  # 1mb
+  max_receive_message_length: 1 * 1024 * 1024
+  max_workers: 1  # max number of workers can be connected

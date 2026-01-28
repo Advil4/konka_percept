@@ -1,0 +1,17 @@
+### konkaV2.0 client configuration file for konka_grpc_client.py ###
+
+server_ip: "192.168.20.78"
+server_port: "50051"
+data_size: 500
+send_masks: True # 是否开启分割mask
+draw_result: False
+filter_tracks: False
+output_path: "results/test_results.avi"
+width: 640
+height: 480
+#width: 1296
+#height: 968
+
+input:
+  type: "queue" # 可选值: camera, queue
+  source: "results/realsense_output.avi"  # 可以是摄像头编号、视频路径、图片文件夹路径

@@ -13452,3 +13452,10 @@
 2026-01-20 13:24:38 [Thread-2 (run)] [pipeline] - INFO - connected to 192.168.20.78:50051
 2026-01-20 13:24:38 [Thread-2 (run)] [pipeline] - INFO - stub created
 2026-01-20 13:25:03 [MainThread] [pipeline] - INFO - Shutting down...
+2026-01-28 17:42:56 [MainThread] [pipeline] - INFO - Pipeline initialized in 0.19ms
+2026-01-28 17:42:56 [MainThread] [pipeline] - INFO - image processing servicer initialized
+2026-01-28 17:42:56 [MainThread] [pipeline] - INFO - server initiated
+2026-01-28 17:45:08 [MainThread] [pipeline] - INFO - Loaded config from client_config.yaml
+2026-01-28 17:45:08 [MainThread] [pipeline] - INFO - vocab loaded
+2026-01-28 17:45:08 [Thread-2 (run)] [pipeline] - INFO - connected to 192.168.20.78:50051
+2026-01-28 17:45:08 [Thread-2 (run)] [pipeline] - INFO - stub created

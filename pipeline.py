@@ -517,12 +517,6 @@ class ResultProcessingStage(PipelineStage):
     def __init__(self, pipeline, input_queue, output_queue):
         super().__init__(input_queue, output_queue)
         self.pipeline = pipeline
-        vocab_path = "./en_vocabulary.txt"
-        with open(vocab_path, 'r') as f:
-            self.all_class_name = [line.strip() for line in f.readlines()]
-        move_vocab_path = "./en_move_vocabulary.txt"
-        with open(move_vocab_path, 'r') as f:
-            self.move_class_name = [line.strip() for line in f.readlines()]
 
     def run(self):
         while not self.is_stopped():
@@ -1030,11 +1024,11 @@ class PipelinePredictor:
 
         # 模型初始化
         self.device = select_device('0')
-        self.tensorrt_model_det = TensorRTBackend(
-            weights=self.cfg['model_cfg']['model_det'],
-            device=self.device,
-            asynchronous=False
-        )
+        # self.tensorrt_model_det = TensorRTBackend(
+        #     weights=self.cfg['model_cfg']['model_det'],
+        #     device=self.device,
+        #     asynchronous=False
+        # )
         self.tensorrt_model_seg = TensorRTBackend(
             weights=self.cfg['model_cfg']['model_seg'],
             device=self.device,
@@ -1085,11 +1079,11 @@ class PipelinePredictor:
 
     def init_predictor(self, task):
         self.task = task
-        if task == 'detect':
-            self.predictor = DynamicDetectionPredictor()
-            self.predictor.model = self.tensorrt_model_det
-            self.tensorrt_model = self.tensorrt_model_det
-        elif task == 'segment':
+        # if task == 'detect':
+        #     self.predictor = DynamicDetectionPredictor()
+        #     self.predictor.model = self.tensorrt_model_det
+        #     self.tensorrt_model = self.tensorrt_model_det
+        if task == 'segment':
             if self.cfg['model_cfg']['model_dual']:
                 self.predictor = DualBranchPredictor()  # 双分支分割预测器
             else:

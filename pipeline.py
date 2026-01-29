@@ -8,7 +8,7 @@ from typing import Any, Optional
 import cv2
 import numpy as np
 import torch
-from boxmot import BotSort
+from boxmot import BotSort, StrongSort, OcSort
 
 from ultralytics.utils.ops import xywh2xyxy, scale_boxes
 from ultralytics.utils.torch_utils import select_device
@@ -1035,36 +1035,42 @@ class PipelinePredictor:
             asynchronous=False
         )
         # self.tracker = ByteTrack(track_buffer=10, match_thresh=0.5)
-        self.general_tracker = BotSort(
-            reid_weights=Path("tracker/osnet_x0_25_market.pt"),  # ReID model to use
-            device=torch.device("cuda:0"),
-            half=True,
-            frame_rate=10,
-            with_reid=False,
-            match_thresh=0.8,
-            track_buffer=30,
-            # 检测阈值
-            track_high_thresh=0.25,
-            track_low_thresh=0.1,
-            new_track_thresh=0.25,
-            # CMC 选择
-            cmc_method="sof",
+        # self.general_tracker = BotSort(
+        #     reid_weights=Path("tracker/osnet_x0_25_market.pt"),  # ReID model to use
+        #     device=torch.device("cuda:0"),
+        #     half=True,
+        #     frame_rate=10,
+        #     with_reid=False,
+        #     match_thresh=0.8,
+        #     track_buffer=30,
+        #     # 检测阈值
+        #     track_high_thresh=0.1,
+        #     track_low_thresh=0.1,
+        #     new_track_thresh=0.1,
+        #     # CMC 选择
+        #     cmc_method="sof",
+        # )
+
+        self.general_tracker = OcSort(
+            min_hits=0,
+            det_thresh=0.1,
+            min_conf=0.1,
+            max_age=30,
+            delta_t=3,
+            asso_threshold=0.3,
+            asso_func="iou",
+            use_byte=False
         )
 
-        self.gripper_tracker = BotSort(
-            reid_weights=Path("tracker/osnet_x0_25_market.pt"),  # ReID model to use
-            device=torch.device("cuda:0"),
-            half=True,
-            frame_rate=10,
-            with_reid=False,
-            match_thresh=0.8,
-            track_buffer=30,
-            # 检测阈值
-            track_high_thresh=0.25,
-            track_low_thresh=0.1,
-            new_track_thresh=0.25,
-            # CMC 选择
-            cmc_method="sof",
+        self.gripper_tracker = OcSort(
+            min_hits=0,
+            det_thresh=0.1,
+            min_conf=0.1,
+            max_age=30,
+            delta_t=3,
+            asso_threshold=0.3,
+            asso_func="iou",
+            use_byte=False
         )
 
         # 线程相关字段初始化为 None

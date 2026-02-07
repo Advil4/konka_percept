@@ -11,8 +11,8 @@ model_cfg:
 
 visual_cfg:
   visual: True
-  video_save: True
-  img_show: True
+  video_save: False
+  img_show: False
   img_save: False
   output_path: "results/output.avi"
   images_path: "results/images"

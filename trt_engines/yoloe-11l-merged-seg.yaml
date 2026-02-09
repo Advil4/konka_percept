@@ -4,7 +4,7 @@
 # 合并通用模型和机械臂微调模型
 
 # 参数
-nc: 364
+nc: 4586
 
 scales: # model compound scaling constants, i.e. 'model=yolo11n.yaml' will call yolo11.yaml with scale 'n'
   # [depth, width, max_channels]
@@ -49,7 +49,7 @@ head:
   - [[-1, 10], 1, Concat, [1]] # 21, cat head P5
   - [-1, 2, C3k2, [1024, True]] # 22 (P5/32-large)
 
-  - [[16, 19, 22], 1, YOLOESegment, [363, 32, 256, 512, True]] # 23 - 通用检测头 (P3, P4, P5)
+  - [[16, 19, 22], 1, YOLOESegment, [4585, 32, 256, 512, True]] # 23 - 通用检测头 (P3, P4, P5)
 
   # 机械臂专用检测分支（来自机械臂微调模型）
   - [10, 1, nn.Upsample, [None, 2, "nearest"]] # 24

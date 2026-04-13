@@ -34,64 +34,15 @@ class ImageProcessingStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.singleTrack = channel.unary_unary(
-                '/ImageProcessing/singleTrack',
-                request_serializer=imgs__pb2.Img.SerializeToString,
-                response_deserializer=imgs__pb2.Tracks.FromString,
-                _registered_method=True)
-        self.singleMask = channel.unary_unary(
-                '/ImageProcessing/singleMask',
-                request_serializer=imgs__pb2.Img.SerializeToString,
-                response_deserializer=imgs__pb2.MasksTracks.FromString,
-                _registered_method=True)
-        self.continuousTrack = channel.stream_stream(
-                '/ImageProcessing/continuousTrack',
-                request_serializer=imgs__pb2.Img.SerializeToString,
-                response_deserializer=imgs__pb2.Tracks.FromString,
-                _registered_method=True)
-        self.continuousMask = channel.stream_stream(
-                '/ImageProcessing/continuousMask',
-                request_serializer=imgs__pb2.Img.SerializeToString,
-                response_deserializer=imgs__pb2.MasksTracks.FromString,
-                _registered_method=True)
         self.continuousInfo = channel.stream_stream(
                 '/ImageProcessing/continuousInfo',
-                request_serializer=imgs__pb2.Img.SerializeToString,
+                request_serializer=imgs__pb2.ClientRequest.SerializeToString,
                 response_deserializer=imgs__pb2.MasksTracks.FromString,
                 _registered_method=True)
 
 
 class ImageProcessingServicer(object):
     """Missing associated documentation comment in .proto file."""
-
-    def singleTrack(self, request, context):
-        """define the process of taking in image(s) from navigation system 
-        and sending out masks to downstream system
-
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def singleMask(self, request, context):
-        """a single call to the server with a single image, return tracking information 
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def continuousTrack(self, request_iterator, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def continuousMask(self, request_iterator, context):
-        """a continuous stream of images, return tracking information
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
 
     def continuousInfo(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
@@ -102,29 +53,9 @@ class ImageProcessingServicer(object):
 
 def add_ImageProcessingServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'singleTrack': grpc.unary_unary_rpc_method_handler(
-                    servicer.singleTrack,
-                    request_deserializer=imgs__pb2.Img.FromString,
-                    response_serializer=imgs__pb2.Tracks.SerializeToString,
-            ),
-            'singleMask': grpc.unary_unary_rpc_method_handler(
-                    servicer.singleMask,
-                    request_deserializer=imgs__pb2.Img.FromString,
-                    response_serializer=imgs__pb2.MasksTracks.SerializeToString,
-            ),
-            'continuousTrack': grpc.stream_stream_rpc_method_handler(
-                    servicer.continuousTrack,
-                    request_deserializer=imgs__pb2.Img.FromString,
-                    response_serializer=imgs__pb2.Tracks.SerializeToString,
-            ),
-            'continuousMask': grpc.stream_stream_rpc_method_handler(
-                    servicer.continuousMask,
-                    request_deserializer=imgs__pb2.Img.FromString,
-                    response_serializer=imgs__pb2.MasksTracks.SerializeToString,
-            ),
             'continuousInfo': grpc.stream_stream_rpc_method_handler(
                     servicer.continuousInfo,
-                    request_deserializer=imgs__pb2.Img.FromString,
+                    request_deserializer=imgs__pb2.ClientRequest.FromString,
                     response_serializer=imgs__pb2.MasksTracks.SerializeToString,
             ),
     }
@@ -137,114 +68,6 @@ def add_ImageProcessingServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class ImageProcessing(object):
     """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def singleTrack(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/ImageProcessing/singleTrack',
-            imgs__pb2.Img.SerializeToString,
-            imgs__pb2.Tracks.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def singleMask(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/ImageProcessing/singleMask',
-            imgs__pb2.Img.SerializeToString,
-            imgs__pb2.MasksTracks.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def continuousTrack(request_iterator,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.stream_stream(
-            request_iterator,
-            target,
-            '/ImageProcessing/continuousTrack',
-            imgs__pb2.Img.SerializeToString,
-            imgs__pb2.Tracks.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def continuousMask(request_iterator,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.stream_stream(
-            request_iterator,
-            target,
-            '/ImageProcessing/continuousMask',
-            imgs__pb2.Img.SerializeToString,
-            imgs__pb2.MasksTracks.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
 
     @staticmethod
     def continuousInfo(request_iterator,
@@ -261,7 +84,7 @@ class ImageProcessing(object):
             request_iterator,
             target,
             '/ImageProcessing/continuousInfo',
-            imgs__pb2.Img.SerializeToString,
+            imgs__pb2.ClientRequest.SerializeToString,
             imgs__pb2.MasksTracks.FromString,
             options,
             channel_credentials,

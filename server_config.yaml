@@ -4,18 +4,24 @@ DEVICE: "cuda:0"
 
 model_cfg:
   iou_threshold: 0.7
-  conf_threshold: 0.1
+  conf_threshold: 0.2
   model_seg: "trt_engines/yoloe-11l-merged-seg.engine"
-#  model_det: "trt_engines/yoloe-v8l-det.engine"
   model_dual: True
 
 visual_cfg:
-  visual: True
   video_save: False
-  img_show: False
+  img_show: True
   img_save: False
-  output_path: "results/output.avi"
+  img_result_save: False
+  json_result_save: False
+  video_path: "results/video.avi"
   images_path: "results/images"
+  images_result_path: "results/images_result"
+  json_result_path: "results/json_result"
+
+ros_cfg:
+  topic: "/head_camera/color/image_raw"
+  target_fps: 10
 
 server_cfg:
   server_ip: "0.0.0.0"

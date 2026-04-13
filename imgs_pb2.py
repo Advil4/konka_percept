@@ -24,23 +24,23 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nimgs.proto\"<\n\x03Img\x12\x11\n\ttimeStamp\x18\x01 \x01(\x0c\x12\x0b\n\x03img\x18\x02 \x01(\x0c\x12\x15\n\rrequiresMasks\x18\x03 \x01(\x08\"+\n\x06Tracks\x12\x11\n\ttimeStamp\x18\x01 \x01(\x0c\x12\x0e\n\x06tracks\x18\x02 \x01(\x0c\";\n\x0bMasksTracks\x12\x11\n\ttimeStamp\x18\x01 \x01(\x0c\x12\x19\n\x06tracks\x18\x02 \x03(\x0b\x32\t.TrackRow\"\x9b\x01\n\x08TrackRow\x12\n\n\x02x1\x18\x01 \x01(\x02\x12\n\n\x02y1\x18\x02 \x01(\x02\x12\n\n\x02x2\x18\x03 \x01(\x02\x12\n\n\x02y2\x18\x04 \x01(\x02\x12\x0f\n\x07trackId\x18\x05 \x01(\t\x12\x0c\n\x04\x63onf\x18\x06 \x01(\x02\x12\x0b\n\x03\x63ls\x18\x07 \x01(\t\x12\x14\n\x04mask\x18\x08 \x03(\x0b\x32\x06.Masks\x12\x0e\n\x06isMove\x18\t \x01(\x08\x12\r\n\x05\x66\x65\x61ts\x18\n \x03(\x02\"\x1d\n\x05Masks\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x32\xd5\x01\n\x0fImageProcessing\x12\x1e\n\x0bsingleTrack\x12\x04.Img\x1a\x07.Tracks\"\x00\x12\"\n\nsingleMask\x12\x04.Img\x1a\x0c.MasksTracks\"\x00\x12&\n\x0f\x63ontinuousTrack\x12\x04.Img\x1a\x07.Tracks\"\x00(\x01\x30\x01\x12*\n\x0e\x63ontinuousMask\x12\x04.Img\x1a\x0c.MasksTracks\"\x00(\x01\x30\x01\x12*\n\x0e\x63ontinuousInfo\x12\x04.Img\x1a\x0c.MasksTracks\"\x00(\x01\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nimgs.proto\"\xbf\x04\n\rClientRequest\x12\x1b\n\x0epercept_enable\x18\x01 \x01(\x08H\x00\x88\x01\x01\x12\"\n\x15percept_enable_visual\x18\x02 \x01(\x08H\x01\x88\x01\x01\x12$\n\x17percept_enable_img_save\x18\x03 \x01(\x08H\x02\x88\x01\x01\x12\'\n\x1apercept_enable_visual_save\x18\x04 \x01(\x08H\x03\x88\x01\x01\x12\'\n\x1apercept_enable_result_save\x18\x05 \x01(\x08H\x04\x88\x01\x01\x12)\n\x1cpercept_enable_img_save_path\x18\x06 \x01(\tH\x05\x88\x01\x01\x12,\n\x1fpercept_enable_visual_save_path\x18\x07 \x01(\tH\x06\x88\x01\x01\x12,\n\x1fpercept_enable_result_save_path\x18\x08 \x01(\tH\x07\x88\x01\x01\x42\x11\n\x0f_percept_enableB\x18\n\x16_percept_enable_visualB\x1a\n\x18_percept_enable_img_saveB\x1d\n\x1b_percept_enable_visual_saveB\x1d\n\x1b_percept_enable_result_saveB\x1f\n\x1d_percept_enable_img_save_pathB\"\n _percept_enable_visual_save_pathB\"\n _percept_enable_result_save_path\"\x9b\x01\n\x08TrackRow\x12\n\n\x02x1\x18\x01 \x01(\x02\x12\n\n\x02y1\x18\x02 \x01(\x02\x12\n\n\x02x2\x18\x03 \x01(\x02\x12\n\n\x02y2\x18\x04 \x01(\x02\x12\x0f\n\x07trackId\x18\x05 \x01(\t\x12\x0c\n\x04\x63onf\x18\x06 \x01(\x02\x12\x0b\n\x03\x63ls\x18\x07 \x01(\t\x12\x14\n\x04mask\x18\x08 \x03(\x0b\x32\x06.Masks\x12\x0e\n\x06isMove\x18\t \x01(\x08\x12\r\n\x05\x66\x65\x61ts\x18\n \x03(\x02\"\x1d\n\x05Masks\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\"1\n\rCommandStatus\x12\x0f\n\x07\x63ommand\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"e\n\x0bMasksTracks\x12\x11\n\ttimeStamp\x18\x01 \x01(\x0c\x12\x19\n\x06tracks\x18\x02 \x03(\x0b\x32\t.TrackRow\x12(\n\x10\x63ommand_statuses\x18\x03 \x03(\x0b\x32\x0e.CommandStatus2E\n\x0fImageProcessing\x12\x32\n\x0e\x63ontinuousInfo\x12\x0e.ClientRequest\x1a\x0c.MasksTracks(\x01\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'imgs_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_IMG']._serialized_start=14
-  _globals['_IMG']._serialized_end=74
-  _globals['_TRACKS']._serialized_start=76
-  _globals['_TRACKS']._serialized_end=119
-  _globals['_MASKSTRACKS']._serialized_start=121
-  _globals['_MASKSTRACKS']._serialized_end=180
-  _globals['_TRACKROW']._serialized_start=183
-  _globals['_TRACKROW']._serialized_end=338
-  _globals['_MASKS']._serialized_start=340
-  _globals['_MASKS']._serialized_end=369
-  _globals['_IMAGEPROCESSING']._serialized_start=372
-  _globals['_IMAGEPROCESSING']._serialized_end=585
+  _globals['_CLIENTREQUEST']._serialized_start=15
+  _globals['_CLIENTREQUEST']._serialized_end=590
+  _globals['_TRACKROW']._serialized_start=593
+  _globals['_TRACKROW']._serialized_end=748
+  _globals['_MASKS']._serialized_start=750
+  _globals['_MASKS']._serialized_end=779
+  _globals['_COMMANDSTATUS']._serialized_start=781
+  _globals['_COMMANDSTATUS']._serialized_end=830
+  _globals['_MASKSTRACKS']._serialized_start=832
+  _globals['_MASKSTRACKS']._serialized_end=933
+  _globals['_IMAGEPROCESSING']._serialized_start=935
+  _globals['_IMAGEPROCESSING']._serialized_end=1004
 # @@protoc_insertion_point(module_scope)

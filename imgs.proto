@@ -1,41 +1,19 @@
 syntax = "proto3";
 
-service ImageProcessing{
+// ----- 客户端发来的请求 -----
+message ClientRequest {
+    optional bool percept_enable = 1;  // 开启/关闭 感知
+    optional bool percept_enable_visual = 2;      // 开启/关闭 可视化
+    optional bool percept_enable_img_save = 3;   // 开启/关闭 原图存储
+    optional bool percept_enable_visual_save = 4;  // 开启/关闭 可视化图存储
+    optional bool percept_enable_result_save = 5;  // 开启/关闭 结果存储
 
-    // define the process of taking in image(s) from navigation system 
-    // and sending out masks to downstream system
-    
-    rpc singleTrack(Img) returns (Tracks) {} 
-    // a single call to the server with a single image, return tracking information 
-    rpc singleMask(Img) returns (MasksTracks) {}
-    // a single call to the server with a single image, return tracking and mask information
-
-    rpc continuousTrack(stream Img) returns (stream Tracks) {}
-    // a continuous stream of images, return tracking information
-    rpc continuousMask(stream Img) returns (stream MasksTracks) {}
-    // a continuous stream of images, return tracking and mask information
-
-    rpc continuousInfo(stream Img) returns (stream MasksTracks) {}
-    // a unified implementation of both continuousTrack and continuousMask
+    optional string percept_enable_img_save_path = 6;
+    optional string percept_enable_visual_save_path = 7;
+    optional string percept_enable_result_save_path = 8;
 }
 
-message Img{
-    bytes timeStamp = 1;
-    bytes img = 2; 
-    bool requiresMasks = 3;
-}
-
-message Tracks{
-    bytes timeStamp = 1;
-    bytes tracks = 2;
-    // return type with no mask  
-}
-
-message MasksTracks{
-    bytes timeStamp = 1;
-    repeated TrackRow tracks = 2;
-}
-
+// ----- 服务端返回的数据 -----
 message TrackRow {
     float x1 = 1;
     float y1 = 2;
@@ -52,4 +30,20 @@ message TrackRow {
 message Masks {
     int32 x = 1;
     int32 y = 2;
+}
+
+// 单条指令的执行状态
+message CommandStatus {
+    string command = 1;      // 指令名称，例如 "percept_enable"
+    string message = 2;      // 状态详情，"success"，"failure"
+}
+
+message MasksTracks {
+    bytes timeStamp = 1;
+    repeated TrackRow tracks = 2;
+    repeated CommandStatus command_statuses = 3;
+}
+
+service ImageProcessing {
+    rpc continuousInfo(stream ClientRequest) returns (stream MasksTracks);
 }

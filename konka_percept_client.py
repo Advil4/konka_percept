@@ -1,11 +1,10 @@
 import os
 import time
-import threading
-import queue
-import yaml
+
+import cv2
 import grpc
 import numpy as np
-import cv2
+import yaml
 
 import imgs_pb2
 import imgs_pb2_grpc
@@ -39,9 +38,9 @@ class KonkaGrpcClient:
         self.data_size = config.get('data_size', 500)
 
         # 可视化配置 (在黑底上画框，用于测试)
-        self.visualize = True
-        self.width = 640  # 默认画布宽
-        self.height = 480  # 默认画布高
+        self.visualize = config.get('visualize', False)
+        self.width = config.get('width', 640)  # 默认画布宽
+        self.height = config.get('height', 480)  # 默认画布高
 
         self.result_queue = result_queue
 
@@ -50,10 +49,8 @@ class KonkaGrpcClient:
         try:
             logger.info("Sending initial handshake...")
             # 发送一个空的包，带上当前时间戳
-            yield imgs_pb2.Img(
-                img=b'',
-                timeStamp=str(time.time()).encode("utf-8"),
-                requiresMasks=True
+            yield imgs_pb2.ClientRequest(
+                percept_enable=True
             )
 
             while True:

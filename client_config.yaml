@@ -3,9 +3,7 @@
 server_ip: "192.168.10.53"
 server_port: "50051"
 data_size: 500
-send_masks: True # 是否开启分割mask
-draw_result: False
-filter_tracks: False
+visualize: False
 output_path: "results/test_results.avi"
 width: 640
 height: 480

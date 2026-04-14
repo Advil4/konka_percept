@@ -10,7 +10,7 @@ model_cfg:
 
 visual_cfg:
   video_save: False
-  img_show: True
+  img_show: False
   img_save: False
   img_result_save: False
   json_result_save: False
@@ -21,7 +21,7 @@ visual_cfg:
 
 ros_cfg:
   topic: "/head_camera/color/image_raw"
-  target_fps: 10
+  target_fps: 30
 
 server_cfg:
   server_ip: "0.0.0.0"

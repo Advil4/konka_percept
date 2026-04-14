@@ -201,10 +201,16 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                 h, w = img.shape[:2]
                 self._init_writer_if_needed(w, h)
                 self.pipe.set_source((img, timestamp))
+                start_time = time.time()
                 data = self.pipe.run_pipeline()
+                all_time = (time.time() - start_time) * 1e3
 
                 if data is None:
+                    logger.warning(f"No data returned for time_stamp: {timestamp}, skipping...")
                     continue
+                logger.info(
+                    f"pre_time: {data.pre_time:.2f}ms infer_time: {data.infer_time:.2f}ms post_time: {data.post_time:.2f}ms "
+                    f"track_time: {data.track_time:.2f}ms result_time: {data.result_time:.2f}ms all_time: {all_time:.2f}ms")
 
                 tracked_objects = data.tracked_objects
                 masks_coords = (
@@ -307,8 +313,8 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                             masks_coords = masks_coords[mask_size:]
                             for pt in contour:
                                 track_row.mask.add(
-                                    x=int(pt[0]) if pt[0] else 0,
-                                    y=int(pt[1]) if pt[1] else 0,
+                                    x=int(pt[0]),
+                                    y=int(pt[1]),
                                 )
                         tracks.append(track_row)
 

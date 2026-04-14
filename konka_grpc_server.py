@@ -97,7 +97,7 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                 continue
             logger.info(
                 f"pre_time: {data.pre_time:.2f}ms infer_time: {data.infer_time:.2f}ms post_time: {data.post_time:.2f}ms "
-                f"track_time: {data.track_time:.2f} result_time: {data.result_time:.2f}ms all_time: {all_time:.2f}ms")
+                f"track_time: {data.track_time:.2f}ms result_time: {data.result_time:.2f}ms all_time: {all_time:.2f}ms")
 
             # 提取结果
             tracked_objects = data.tracked_objects

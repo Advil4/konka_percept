@@ -68,7 +68,6 @@ class RosImageSource(threading.Thread):
 
                 try:
                     cv_img = bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
-                    # 逆时针旋转90度
                     cv_img = cv2.rotate(cv_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
                     ts = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
 
@@ -454,7 +453,7 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                     process_bool_cmd("percept_enable_visual_save")
                     process_bool_cmd("percept_enable_result_save")
 
-                    # 3. 处理各项路径配置 (需配合 string 修改)
+                    # 3. 处理各项路径配置
                     process_str_cmd("percept_enable_img_save_path")
                     process_str_cmd("percept_enable_visual_save_path")
                     process_str_cmd("percept_enable_result_save_path")

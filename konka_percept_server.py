@@ -224,6 +224,8 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                 )
 
                 # 2. 可视化模块
+                vis_img = None
+                extended_img = None
                 if self.percept_enable_visual:
                     vis_img = img.copy()
                     padding = self.padding
@@ -260,29 +262,60 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                                 )
 
                     # 显示弹窗
-                    if self.percept_enable_visual:
-                        cv2.imshow("Server Visual", extended_img)
-                        if cv2.waitKey(1) == ord("q"):
-                            STOP_EVENT.set()
+                    cv2.imshow("Server Visual", extended_img)
+                    if cv2.waitKey(1) == ord("q"):
+                        STOP_EVENT.set()
 
-                    # 3. 图像与可视化结果本地保存
+                    # 视频录制
                     if self.video_save and self.writer:
                         self.writer.write(extended_img)
 
-                    # 支持动态模型保存
-                    if self.percept_enable_img_save:
-                        os.makedirs(self.percept_enable_img_save_path, exist_ok=True)
-                        cv2.imwrite(
-                            f"{self.percept_enable_img_save_path}/{ts_str}.png", vis_img
-                        )
+                # 3. 图像与可视化结果本地保存
+                if self.percept_enable_img_save:
+                    if vis_img is None:
+                        vis_img = img.copy()
+                    os.makedirs(self.percept_enable_img_save_path, exist_ok=True)
+                    cv2.imwrite(f"{self.percept_enable_img_save_path}/{ts_str}.png", vis_img)
 
-                    if self.percept_enable_visual_save:
-                        os.makedirs(self.percept_enable_visual_save_path, exist_ok=True)
-                        cv2.imwrite(
-                            f"{self.percept_enable_visual_save_path}/{ts_str}.png",
-                            extended_img,
-                        )
-                else:
+                if self.percept_enable_visual_save:
+                    if extended_img is None:
+                        padding = self.padding
+                        new_w, new_h = w + 2 * padding, h + 2 * padding
+                        extended_img = np.zeros((new_h, new_w, 3), dtype=np.uint8)
+                        extended_img[padding: padding + h, padding: padding + w] = img
+
+                        if len(tracked_objects) > 0:
+                            temp_masks = np.array(data.masks_coords, dtype=np.int32) if data.masks_coords else []
+                            for track, mask_size in zip(tracked_objects, mask_sizes):
+                                x1, y1, x2, y2 = map(round, track[:4])
+                                cls_id = int(track[6])
+                                color = get_color(cls_id)
+                                x1, y1 = max(0, x1 + padding), max(0, y1 + padding)
+                                x2, y2 = max(0, x2 + padding), max(0, y2 + padding)
+
+                                cv2.rectangle(extended_img, (x1, y1), (x2, y2), color, 2)
+
+                                if mask_size > 0 and len(temp_masks) > 0:
+                                    contour = temp_masks[:mask_size]
+                                    temp_masks = temp_masks[mask_size:]
+                                    contour = np.array(contour).reshape(-1, 1, 2)
+                                    contour[:, :, 0] += padding
+                                    contour[:, :, 1] += padding
+                                    mask_canvas = np.zeros(extended_img.shape[:2], dtype=np.uint8)
+                                    cv2.drawContours(mask_canvas, [contour], -1, 1, thickness=cv2.FILLED)
+                                    mask_bool = (mask_canvas > 0.5).astype(np.uint8)
+                                    extended_img[mask_bool == 1] = (
+                                            extended_img[mask_bool == 1] * 0.5
+                                            + np.array(color) * 0.5
+                                    )
+
+                    os.makedirs(self.percept_enable_visual_save_path, exist_ok=True)
+                    cv2.imwrite(
+                        f"{self.percept_enable_visual_save_path}/{ts_str}.png",
+                        extended_img,
+                    )
+
+                if not self.percept_enable_visual:
                     cv2.destroyAllWindows()
 
                 masks_coords = (
@@ -335,17 +368,10 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                                 }
                             )
                         try:
-                            os.makedirs(
-                                self.percept_enable_result_save_path, exist_ok=True
-                            )
-                            with open(
-                                    f"{self.percept_enable_result_save_path}/all_results.json",
-                                    "w",
-                                    encoding="utf-8",
-                            ) as f:
-                                json.dump(
-                                    self.all_results, f, indent=2, ensure_ascii=False
-                                )
+                            os.makedirs(self.percept_enable_result_save_path, exist_ok=True)
+                            with open(f"{self.percept_enable_result_save_path}/all_results.json", "w",
+                                      encoding="utf-8", ) as f:
+                                json.dump(self.all_results, f, indent=2, ensure_ascii=False)
                         except Exception as e:
                             logger.error(f"Save JSON Error：{e}")
 
@@ -370,13 +396,11 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
         """
         logger.info(f"Client connected. Peer: {context.peer()}")
 
-        # 为当前客户端创建一个最大容量为10的专属缓冲队列
         my_queue = queue.Queue(maxsize=10)
 
         with self.client_lock:
             self.client_queues.append(my_queue)
 
-        # 异步读取客户端指令并给予状态应答
         def read_commands():
             try:
                 for req in request_iterator:
@@ -458,12 +482,11 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                     process_str_cmd("percept_enable_visual_save_path")
                     process_str_cmd("percept_enable_result_save_path")
 
-                    # 4. 如果本次请求包含任何指令，则生成一条 ACK 回执发给该客户端
                     if status_list:
                         ts_str = "{:.6f}".format(time.time())
                         ack_msg = imgs_pb2.MasksTracks(
                             timeStamp=ts_str.encode("utf-8"),
-                            tracks=[],  # 纯状态应答，不带图像数据
+                            tracks=[],
                             command_statuses=status_list,
                         )
 

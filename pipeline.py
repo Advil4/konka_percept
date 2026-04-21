@@ -878,7 +878,7 @@ class ResultProcessingStage(PipelineStage):
                 if not valid_contours:
                     continue
 
-                combined_contour = np.vstack(valid_contours).squeeze()
+                combined_contour = np.vstack(valid_contours).reshape(-1, 2)
                 mask_sizes.append(len(combined_contour))
                 masks_coords.extend(combined_contour.tolist())  # 确保转换为列表
             except Exception as e:

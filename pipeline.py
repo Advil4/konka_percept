@@ -271,18 +271,13 @@ class TrackingStage(PipelineStage):
                 continue
 
     def _track_dual_branch(self, data):
-        """
-        对双分支模型的结果分别进行跟踪
-        """
+        """对双分支模型的结果分别进行跟踪"""
         try:
-            # 获取后处理结果
             general_post_results = data.post_results[1][0]
 
-            # 安全地获取通用分支的boxes
             general_boxes_result = general_post_results[0]
             if hasattr(general_boxes_result, 'boxes'):
                 general_boxes = general_boxes_result.boxes
-                # 安全地转换为numpy数组
                 if hasattr(general_boxes, 'cpu'):
                     general_boxes_np = general_boxes.cpu().numpy()
                 elif hasattr(general_boxes, 'numpy'):
@@ -292,11 +287,9 @@ class TrackingStage(PipelineStage):
             else:
                 general_boxes_np = np.array(general_boxes_result)
 
-            # 安全地获取特征向量（如果存在）
             if hasattr(general_boxes_result, 'feats') and general_boxes_result.feats is not None:
                 general_feats = general_boxes_result.feats[0]
                 general_feats_idx = general_boxes_result.feats[1]
-                # 转换为numpy数组
                 if hasattr(general_feats, 'cpu'):
                     general_feats = general_feats.cpu().numpy()
                 else:
@@ -316,7 +309,6 @@ class TrackingStage(PipelineStage):
             for obj in general_tracked_objects_old:
                 detection_idx = int(obj[7])
                 new_bbox = general_detections[detection_idx][:4]
-                # 安全处理特征
                 new_feats = general_feats[detection_idx].tolist() if general_feats is not None else []
                 new_feats_idx = int(general_feats_idx[detection_idx]) if general_feats_idx is not None else -1
                 updated_obj = obj.copy().tolist()
@@ -328,12 +320,10 @@ class TrackingStage(PipelineStage):
 
             # 处理夹爪分支
             gripper_post_results = data.post_results[1][1]
-            # 添加安全检查
             if gripper_post_results and len(gripper_post_results) > 0 and gripper_post_results[0] is not None:
                 gripper_boxes_result = gripper_post_results[0]
                 if hasattr(gripper_boxes_result, 'boxes'):
                     gripper_boxes = gripper_boxes_result.boxes
-                    # 安全地转换为numpy数组
                     if hasattr(gripper_boxes, 'cpu'):
                         gripper_boxes_np = gripper_boxes.cpu().numpy()
                     elif hasattr(gripper_boxes, 'numpy'):
@@ -343,11 +333,9 @@ class TrackingStage(PipelineStage):
                 else:
                     gripper_boxes_np = np.array(gripper_boxes_result)
 
-                # 安全地获取特征向量（如果存在）
                 if hasattr(gripper_boxes_result, 'feats') and gripper_boxes_result.feats is not None:
                     gripper_feats = gripper_boxes_result.feats[0]
                     gripper_feats_idx = gripper_boxes_result.feats[1]
-                    # 转换为numpy数组
                     if hasattr(gripper_feats, 'cpu'):
                         gripper_feats = gripper_feats.cpu().numpy()
                     else:
@@ -367,7 +355,6 @@ class TrackingStage(PipelineStage):
                 for obj in gripper_tracked_objects_old:
                     detection_idx = int(obj[7])
                     new_bbox = gripper_detections[detection_idx][:4]
-                    # 安全处理特征
                     new_feats = gripper_feats[detection_idx].tolist() if gripper_feats is not None else []
                     new_feats_idx = int(gripper_feats_idx[detection_idx]) if gripper_feats_idx is not None else -1
                     updated_obj = obj.copy().tolist()
@@ -402,11 +389,7 @@ class TrackingStage(PipelineStage):
             return [], []
 
     def _create_detections_safe(self, boxes_data):
-        """
-        安全地从boxes数据创建detections数组
-        """
         try:
-            # 确保boxes_data是numpy数组
             if hasattr(boxes_data, 'cpu'):
                 boxes_np = boxes_data.cpu().numpy()
             elif hasattr(boxes_data, 'numpy'):
@@ -453,7 +436,6 @@ class TrackingStage(PipelineStage):
                     conf_data = np.ones((xyxy.shape[0], 1))
                     cls_data = np.zeros((xyxy.shape[0], 1))
 
-            # 拼接检测结果
             detections = np.hstack([
                 xyxy,
                 conf_data,
@@ -469,19 +451,13 @@ class TrackingStage(PipelineStage):
             return np.array([])
 
     def _create_detections(self, boxes_data):
-        """
-        从boxes对象创建detections数组（兼容旧版本）
-        """
         try:
-            # 首先尝试使用安全方法
             return self._create_detections_safe(boxes_data)
         except Exception as e:
             logger.warning(f"使用安全方法创建detections失败，回退到旧方法: {e}")
-            # 回退到原始实现
             if hasattr(boxes_data, 'xyxy'):
                 xyxy = boxes_data.xyxy.copy()
             else:
-                # 如果没有xyxy属性，假设boxes_data本身就是xyxy格式
                 xyxy = boxes_data.copy()
                 if xyxy.ndim == 2 and xyxy.shape[1] >= 4:
                     xyxy = xyxy[:, :4]
@@ -492,12 +468,10 @@ class TrackingStage(PipelineStage):
             xyxy[:, 2] = np.clip(xyxy[:, 2], 0, self.pipeline.orig_w)  # x2
             xyxy[:, 3] = np.clip(xyxy[:, 3], 0, self.pipeline.orig_h)  # y2
 
-            # 获取置信度和类别（回退方法）
             try:
                 conf_data = boxes_data.conf.reshape(-1, 1)
                 cls_data = boxes_data.cls.reshape(-1, 1)
             except AttributeError:
-                # 如果无法获取conf和cls，使用默认值
                 conf_data = np.ones((xyxy.shape[0], 1))
                 cls_data = np.zeros((xyxy.shape[0], 1))
 
@@ -591,6 +565,23 @@ class ResultProcessingStage(PipelineStage):
 
                 # 更新帧计数并输出
                 self.pipeline.frame_count += 1
+
+                data.im = None
+                data.frame = None
+                data.infer_results = None
+                data.post_results = None
+                data.all_tracked_objects = None
+                data.detections = None
+
+                if self.pipeline.frame_count % 500 == 0:
+                    try:
+                        for tracker in [self.pipeline.general_tracker, self.pipeline.gripper_tracker]:
+                            if tracker is not None:
+                                if hasattr(tracker, 'removed_stracks'):
+                                    tracker.removed_stracks.clear()
+                    except Exception as e:
+                        logger.warning(f"清理追踪器底层缓存失败: {e}")
+
                 if self.output_queue:
                     self.output_queue.put(data)
 
@@ -643,7 +634,6 @@ class ResultProcessingStage(PipelineStage):
             # 查找精确匹配的检测框
             matched_index = None
             for i, detection_box in enumerate(detection_boxes):
-                # 直接比较四个值是否相等（考虑浮点数精度）
                 if (abs(detection_box[0] - tracked_box[0]) < 10 and
                         abs(detection_box[1] - tracked_box[1]) < 10 and
                         abs(detection_box[2] - tracked_box[2]) < 10 and
@@ -652,12 +642,8 @@ class ResultProcessingStage(PipelineStage):
                     break
 
             if matched_index is not None:
-                # 从feature_maps中提取对应的特征向量
-                # feature_maps的形状应该是[1, 512, N]，其中N是特征点总数
                 try:
-                    # 提取第matched_index列的所有行（512个特征）
                     feature_vector = feature_maps[0, :, matched_index].cpu().numpy()  # 形状: [512]
-                    # 将特征向量添加到跟踪对象中
                     enhanced_obj = list(tracked_obj) + [feature_vector]
                     enhanced_tracked_objects.append(enhanced_obj)
                     logger.info(f"添加特征向量成功")
@@ -702,49 +688,22 @@ class ResultProcessingStage(PipelineStage):
         return tracked_objects
 
     def _filter_stable_objects(self, all_tracked_objects, timestamp):
-        """过滤出稳定跟踪的对象。"""
-        # 添加输入验证和占位符过滤
         if not all_tracked_objects:
-            return [], []
-
-        # 过滤掉占位符对象（跟踪ID为负数的对象）
-        filtered_objects = []
-        for obj in all_tracked_objects:
-            # 检查是否为占位符对象（跟踪ID为-1）
-            if isinstance(obj, (list, np.ndarray)) and len(obj) > 4:
-                track_id = int(obj[4]) if isinstance(obj[4], (int, float)) else -1
-                if track_id >= 0:  # 只处理有效的跟踪对象
-                    filtered_objects.append(obj)
-            else:
-                # 对于非标准格式的对象，尝试处理
-                try:
-                    track_id = int(obj[4])
-                    if track_id >= 0:
-                        filtered_objects.append(obj)
-                except (IndexError, ValueError, TypeError):
-                    continue  # 跳过无效对象
-
-        if not filtered_objects:
             return [], []
 
         stable_detections = []
         stable_indices = []
 
-        for obj in filtered_objects:
-            track_id = int(obj[4])
-            cls_idx = int(obj[6])
-
-            if track_id not in self.pipeline.track_warmup:
-                self.pipeline.track_warmup[track_id] = f"{cls_idx}_{timestamp}"
-                self.pipeline.track_appearances[track_id] = 1
-            else:
-                self.pipeline.track_appearances[track_id] += 1
-
-            if self.pipeline.track_appearances[track_id] >= self.pipeline.track_filter:
-                self.pipeline.stable_tracks.add(track_id)
-                obj[6] = int(self.pipeline.track_warmup[track_id].split("_")[0])
-                stable_detections.append(obj)
-                stable_indices.append(int(obj[7]))
+        for obj in all_tracked_objects:
+            # 检查是否为有效对象
+            if isinstance(obj, (list, np.ndarray)) and len(obj) > 4:
+                try:
+                    track_id = int(obj[4])
+                    if track_id >= 0:
+                        stable_detections.append(obj)
+                        stable_indices.append(int(obj[7]))
+                except (IndexError, ValueError, TypeError):
+                    continue
 
         return stable_detections, stable_indices
 
@@ -888,108 +847,46 @@ class ResultProcessingStage(PipelineStage):
         return masks_coords, mask_sizes, valid_masks_array
 
     def _filter_object(self, data, general_masks, gripper_masks, general_masks_coords, general_mask_sizes):
-        """
-        根据与夹爪mask的重叠程度过滤通用分支的检测结果。
-        如果通用分支mask与夹爪mask的重叠度大于阈值，则删除该通用分支的结果。
-
-        参数:
-            data: 数据对象
-            general_masks: 通用分支的掩码
-            gripper_masks: 夹爪掩码（只有一个）
-            general_masks_coords: 通用分支掩码坐标
-            general_mask_sizes: 通用分支掩码大小
-        """
-        # 获取需要删除的索引
-        indices_to_remove = []
-
-        # 如果没有夹爪mask，直接返回
-        if len(gripper_masks) == 0:
+        if len(gripper_masks) == 0 or len(general_masks) == 0:
             return general_masks_coords, general_mask_sizes
 
-        # 获取夹爪mask（只有一个）
-        gripper_mask_np = gripper_masks[0].astype(np.uint8)
-        # 计算夹爪mask的非零元素数量
-        gripper_count = np.count_nonzero(gripper_mask_np)
-
-        # 如果夹爪mask为空，直接返回
-        if gripper_count == 0:
+        gripper_mask_np = gripper_masks[0].astype(bool)
+        if not gripper_mask_np.any():
             return general_masks_coords, general_mask_sizes
 
-        # 预计算夹爪mask的边界框，用于快速筛选
-        gripper_y_indices, gripper_x_indices = np.where(gripper_mask_np)
-        if len(gripper_y_indices) == 0:  # 夹爪mask为空
-            return general_masks_coords, general_mask_sizes
+        general_masks_bool = general_masks.astype(bool)
 
-        gripper_bbox = (
-            np.min(gripper_x_indices), np.min(gripper_y_indices),
-            np.max(gripper_x_indices), np.max(gripper_y_indices)
-        )
+        intersections = np.logical_and(general_masks_bool, gripper_mask_np)
+        intersection_counts = intersections.sum(axis=(1, 2))
+        general_counts = general_masks_bool.sum(axis=(1, 2))
 
-        # 遍历通用分支的mask
-        for i in range(len(general_masks)):
-            general_mask = general_masks[i].astype(np.uint8)
+        overlap_ratios = np.zeros_like(general_counts, dtype=np.float32)
+        valid_masks_idx = general_counts > 0
+        overlap_ratios[valid_masks_idx] = intersection_counts[valid_masks_idx] / general_counts[valid_masks_idx]
 
-            # 计算通用mask的边界框
-            general_y_indices, general_x_indices = np.where(general_mask)
-            if len(general_y_indices) == 0:  # 通用mask为空
-                continue
+        indices_to_remove = np.where(overlap_ratios > 0.5)[0].tolist()
 
-            general_bbox = (
-                np.min(general_x_indices), np.min(general_y_indices),
-                np.max(general_x_indices), np.max(general_y_indices)
-            )
-
-            # 快速边界框检查：如果两个边界框不相交，则重叠度为0
-            if (general_bbox[0] > gripper_bbox[2] or general_bbox[2] < gripper_bbox[0] or
-                    general_bbox[1] > gripper_bbox[3] or general_bbox[3] < gripper_bbox[1]):
-                continue  # 不相交，跳过详细计算
-
-            # 计算交集
-            intersection = np.bitwise_and(general_mask, gripper_mask_np)
-            intersection_count = np.count_nonzero(intersection)
-
-            # 以通用分支mask为分母计算重叠度
-            general_count = np.count_nonzero(general_mask)
-
-            if general_count > 0:
-                overlap_ratio = intersection_count / general_count
-                # 如果重叠度大于0.5，则标记为需要删除
-                if overlap_ratio > 0.5:
-                    indices_to_remove.append(i)
-
-        # 如果没有需要删除的项目，直接返回
         if not indices_to_remove:
             return general_masks_coords, general_mask_sizes
 
-        # 删除跟踪结果中对应的项
         if hasattr(data, 'tracked_objects') and data.tracked_objects is not None:
-            # 确保 tracked_objects 是列表形式
             if isinstance(data.tracked_objects, np.ndarray):
                 tracked_objects_list = data.tracked_objects.tolist() if data.tracked_objects.size > 0 else []
             else:
                 tracked_objects_list = list(data.tracked_objects) if data.tracked_objects else []
 
-            # 从后往前删除，避免索引变化问题
             for i in sorted(indices_to_remove, reverse=True):
                 if i < len(tracked_objects_list):
                     tracked_objects_list.pop(i)
-
-            # 更新 tracked_objects
             data.tracked_objects = tracked_objects_list if tracked_objects_list else []
 
-        # 删除mask相关数据中对应的项
         new_masks_coords = []
         new_mask_sizes = []
-
         current_index = 0
         for i, mask_size in enumerate(general_mask_sizes):
-            # 如果当前索引不在删除列表中，则保留
             if i not in indices_to_remove:
-                # 复制对应的mask坐标
-                coords = general_masks_coords[current_index:current_index + mask_size]
-                new_masks_coords.extend(coords)
+                new_masks_coords.extend(general_masks_coords[current_index:current_index + mask_size])
                 new_mask_sizes.append(mask_size)
-            # 否则跳过（删除）
             current_index += mask_size
 
         return new_masks_coords, new_mask_sizes
@@ -1015,7 +912,7 @@ class PipelinePredictor:
         self.tracking_history = {}
 
         # 各阶段队列（增加缓冲区大小）
-        max_size = 100
+        max_size = 10
         self.input_to_infer_queue = queue.Queue(maxsize=max_size)
         self.infer_to_post_queue = queue.Queue(maxsize=max_size)
         self.post_to_track_queue = queue.Queue(maxsize=max_size)
@@ -1055,7 +952,7 @@ class PipelinePredictor:
             min_hits=0,
             det_thresh=0.1,
             min_conf=0.1,
-            max_age=30,
+            max_age=10,
             delta_t=3,
             asso_threshold=0.3,
             asso_func="iou",
@@ -1066,7 +963,7 @@ class PipelinePredictor:
             min_hits=0,
             det_thresh=0.1,
             min_conf=0.1,
-            max_age=30,
+            max_age=10,
             delta_t=3,
             asso_threshold=0.3,
             asso_func="iou",

@@ -139,6 +139,7 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
             self.fourcc = cv2.VideoWriter_fourcc(*"MJPG")
 
         self.all_results = {}
+        self._visual_was_enabled = img_show
 
         # 启动唯一的后台处理线程
         self.worker_thread = threading.Thread(
@@ -315,8 +316,11 @@ class ImageProcessingServicer(imgs_pb2_grpc.ImageProcessingServicer):
                         extended_img,
                     )
 
-                if not self.percept_enable_visual:
+                if self.percept_enable_visual:
+                    self._visual_was_enabled = True
+                elif self._visual_was_enabled:
                     cv2.destroyAllWindows()
+                    self._visual_was_enabled = False
 
                 masks_coords = (
                     np.array(data.masks_coords, dtype=np.int32)

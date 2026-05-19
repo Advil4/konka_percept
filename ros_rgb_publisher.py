@@ -1,4 +1,6 @@
 import time
+import os
+import glob
 
 import cv2
 import numpy as np
@@ -13,11 +15,11 @@ class CameraConfig:
 
     CAMERA_TYPE_ORBBEC = "orbbec"
     CAMERA_TYPE_REALSENSE = "realsense"
+    CAMERA_TYPE_LOCAL_FOLDER = "local_folder"
 
     def __init__(self):
-        self.camera_type = self.CAMERA_TYPE_REALSENSE  # 选择摄像头类型: "orbbec" 或 "realsense"
+        self.camera_type = self.CAMERA_TYPE_LOCAL_FOLDER
 
-        # ROS2 发布配置
         self.topic_name = '/head_camera/color/image_raw'
         self.frame_id = 'camera_color_frame'
         self.publish_fps = 30.0
@@ -25,15 +27,20 @@ class CameraConfig:
 
         self.orbbec_width = 640
         self.orbbec_height = 480
-        self.orbbec_format = 'RGB888'  # 可选: RGB888, MJPG, YUYV
+        self.orbbec_format = 'RGB888'
         self.orbbec_fps = 30
 
         self.realsense_width = 640
         self.realsense_height = 480
-        self.realsense_format = 'RGB8'  # 可选: RGB8, BGR8
+        self.realsense_format = 'RGB8'
         self.realsense_fps = 30
         self.realsense_enable_auto_exposure = True
         self.realsense_enable_auto_white_balance = True
+
+        self.local_folder_path = '/home/ubuntu/datasets/orin_data/case_20/rgb'
+        self.local_folder_extensions = ['*.jpg', '*.jpeg', '*.png', '*.bmp']
+        self.local_folder_loop = True
+        self.local_folder_sort_by_name = True
 
 
 class OrbbecCameraBackend:
@@ -173,8 +180,90 @@ class RealSenseCameraBackend:
         self.pipeline.stop()
 
 
+class LocalImageFolderBackend:
+    """本地图片文件夹后端"""
+
+    def __init__(self, config, logger):
+        self.logger = logger
+        self.folder_path = config.local_folder_path
+        self.loop = config.local_folder_loop
+        self.sort_by_name = config.local_folder_sort_by_name
+
+        self.image_paths = []
+        self.current_index = 0
+        self.total_images = 0
+
+        try:
+            if not os.path.exists(self.folder_path):
+                raise FileNotFoundError(f"文件夹不存在: {self.folder_path}")
+
+            for ext in config.local_folder_extensions:
+                pattern = os.path.join(self.folder_path, ext)
+                self.image_paths.extend(glob.glob(pattern))
+
+            pattern_upper = os.path.join(self.folder_path, ext.upper())
+            self.image_paths.extend(glob.glob(pattern_upper))
+
+            if not self.image_paths:
+                raise FileNotFoundError(f"在 {self.folder_path} 中未找到任何图片文件")
+
+            if self.sort_by_name:
+                self.image_paths.sort()
+
+            self.total_images = len(self.image_paths)
+            self.current_index = 0
+
+            self.logger.info(
+                f"✅ 本地图片文件夹已加载 [{self.total_images} 张图片] "
+                f"[路径: {self.folder_path}] "
+                f"[循环模式: {'开启' if self.loop else '关闭'}]"
+            )
+
+        except Exception as e:
+            self.logger.error(f"❌ 本地图片文件夹初始化失败: {e}")
+            raise
+
+    def get_frame(self):
+        """获取下一帧图像，返回 BGR 格式的 numpy 数组"""
+        if self.total_images == 0:
+            return None
+
+        if self.current_index >= self.total_images:
+            if self.loop:
+                self.current_index = 0
+                self.logger.info("🔄 图片列表已循环")
+            else:
+                self.logger.info("⏹️ 所有图片已发布完毕")
+                return None
+
+        image_path = self.image_paths[self.current_index]
+
+        try:
+            img_bgr = cv2.imread(image_path)
+
+            if img_bgr is None:
+                self.logger.warning(f"⚠️ 无法读取图片: {image_path}")
+                self.current_index += 1
+                return self.get_frame()
+
+            img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_CLOCKWISE)
+
+            self.current_index += 1
+
+            return img_bgr
+
+        except Exception as e:
+            self.logger.error(f"❌ 读取图片失败 [{image_path}]: {e}")
+            self.current_index += 1
+            return self.get_frame()
+
+    def stop(self):
+        """清理资源"""
+        self.logger.info(f"📁 本地图片文件夹后端已停止 [已发布 {self.current_index}/{self.total_images} 张]")
+
+
 class CameraImagePublisher(Node):
-    """通用摄像头图像发布器（支持 Orbbec 和 RealSense）"""
+    """通用图像发布器（支持 Orbbec、RealSense 和本地图片文件夹）"""
 
     def __init__(self):
         super().__init__('camera_rgb_publisher')
@@ -188,8 +277,8 @@ class CameraImagePublisher(Node):
             self.config.queue_size
         )
 
-        self.total_published_frames = 0  # 总发布帧数
-        self.interval_frames = 0  # 间隔内发布的帧数 (用于计算实时FPS)
+        self.total_published_frames = 0
+        self.interval_frames = 0
         self.last_print_time = time.time()
 
         self.camera_backend = self._init_camera()
@@ -199,12 +288,12 @@ class CameraImagePublisher(Node):
                 1.0 / self.config.publish_fps,
                 self.timer_callback
             )
-            self.get_logger().info(f"📷 摄像头发布器已启动，发布到: {self.config.topic_name}")
+            self.get_logger().info(f"📷 图像发布器已启动，发布到: {self.config.topic_name}")
         else:
-            self.get_logger().error("❌ 摄像头初始化失败，节点将退出")
+            self.get_logger().error("❌ 图像源初始化失败，节点将退出")
 
     def _init_camera(self):
-        """根据配置初始化对应的摄像头后端"""
+        """根据配置初始化对应的图像源后端"""
         try:
             if self.config.camera_type == CameraConfig.CAMERA_TYPE_ORBBEC:
                 self.get_logger().info("🔄 初始化 Orbbec 摄像头...")
@@ -214,12 +303,16 @@ class CameraImagePublisher(Node):
                 self.get_logger().info("🔄 初始化 RealSense 摄像头...")
                 return RealSenseCameraBackend(self.config, self.get_logger())
 
+            elif self.config.camera_type == CameraConfig.CAMERA_TYPE_LOCAL_FOLDER:
+                self.get_logger().info("🔄 初始化本地图片文件夹...")
+                return LocalImageFolderBackend(self.config, self.get_logger())
+
             else:
-                self.get_logger().error(f"❌ 不支持的摄像头类型: {self.config.camera_type}")
+                self.get_logger().error(f"❌ 不支持的图像源类型: {self.config.camera_type}")
                 return None
 
         except Exception as e:
-            self.get_logger().error(f"❌ 摄像头初始化异常: {e}")
+            self.get_logger().error(f"❌ 图像源初始化异常: {e}")
             return None
 
     def timer_callback(self):
@@ -228,9 +321,11 @@ class CameraImagePublisher(Node):
             img_bgr = self.camera_backend.get_frame()
 
             if img_bgr is None:
+                if self.config.camera_type == CameraConfig.CAMERA_TYPE_LOCAL_FOLDER:
+                    self.get_logger().info("⏹️ 图片发布完成，停止节点")
+                    rclpy.shutdown()
                 return
 
-            # 转成 ROS 消息并发布
             msg = self.bridge.cv2_to_imgmsg(img_bgr, encoding="bgr8")
             msg.header.stamp = self.get_clock().now().to_msg()
             msg.header.frame_id = self.config.frame_id
@@ -242,7 +337,6 @@ class CameraImagePublisher(Node):
             current_time = time.time()
             elapsed_time = current_time - self.last_print_time
 
-            # 每隔 2 秒打印一次状态流水
             if elapsed_time >= 2.0:
                 actual_fps = self.interval_frames / elapsed_time
                 self.get_logger().info(
@@ -250,7 +344,6 @@ class CameraImagePublisher(Node):
                     f"实时输出帧率: {actual_fps:.1f} FPS"
                 )
 
-                # 重置间隔计数器
                 self.interval_frames = 0
                 self.last_print_time = current_time
 
@@ -258,7 +351,7 @@ class CameraImagePublisher(Node):
             self.get_logger().warn(f"⚠️ 读取帧出错: {e}")
 
     def stop(self):
-        """停止摄像头"""
+        """停止图像源"""
         if hasattr(self, 'camera_backend') and self.camera_backend is not None:
             self.camera_backend.stop()
 

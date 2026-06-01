@@ -16,13 +16,14 @@ class CameraConfig:
     CAMERA_TYPE_ORBBEC = "orbbec"
     CAMERA_TYPE_REALSENSE = "realsense"
     CAMERA_TYPE_LOCAL_FOLDER = "local_folder"
+    CAMERA_TYPE_VIDEO = "video"
 
     def __init__(self):
-        self.camera_type = self.CAMERA_TYPE_LOCAL_FOLDER
+        self.camera_type = self.CAMERA_TYPE_VIDEO
 
         self.topic_name = '/head_camera/color/image_raw'
         self.frame_id = 'camera_color_frame'
-        self.publish_fps = 30.0
+        self.publish_fps = 10
         self.queue_size = 10
 
         self.orbbec_width = 640
@@ -37,10 +38,14 @@ class CameraConfig:
         self.realsense_enable_auto_exposure = True
         self.realsense_enable_auto_white_balance = True
 
-        self.local_folder_path = '/home/ubuntu/datasets/orin_data/case_20/rgb'
+        self.local_folder_path = '/home/ubuntu/Downloads/data/scene_data_for_run/rgb'
         self.local_folder_extensions = ['*.jpg', '*.jpeg', '*.png', '*.bmp']
         self.local_folder_loop = True
         self.local_folder_sort_by_name = True
+
+        self.video_path = '/home/ubuntu/datasets/real_data/video_2.avi'
+        self.video_loop = True
+        self.video_start_frame = 0
 
 
 class OrbbecCameraBackend:
@@ -262,6 +267,68 @@ class LocalImageFolderBackend:
         self.logger.info(f"📁 本地图片文件夹后端已停止 [已发布 {self.current_index}/{self.total_images} 张]")
 
 
+class VideoFileBackend:
+    """视频文件后端"""
+
+    def __init__(self, config, logger):
+        self.logger = logger
+        self.video_path = config.video_path
+        self.loop = config.video_loop
+        self.start_frame = config.video_start_frame
+
+        if not os.path.exists(self.video_path):
+            raise FileNotFoundError(f"视频文件不存在: {self.video_path}")
+
+        self.cap = cv2.VideoCapture(self.video_path)
+        if not self.cap.isOpened():
+            raise RuntimeError(f"无法打开视频文件: {self.video_path}")
+
+        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+        self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.current_frame = 0
+
+        if self.start_frame > 0 and self.start_frame < self.total_frames:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.start_frame)
+            self.current_frame = self.start_frame
+
+        self.logger.info(
+            f"✅ 视频文件已加载 "
+            f"[路径: {self.video_path}] "
+            f"[总帧数: {self.total_frames}] "
+            f"[原始帧率: {self.fps:.1f} FPS] "
+            f"[起始帧: {self.current_frame}] "
+            f"[循环模式: {'开启' if self.loop else '关闭'}]"
+        )
+
+    def get_frame(self):
+        if self.cap is None:
+            return None
+
+        ret, img_bgr = self.cap.read()
+        img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_CLOCKWISE)
+
+        if not ret:
+            if self.loop:
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                self.current_frame = 0
+                self.logger.info("🔄 视频已循环")
+                ret, img_bgr = self.cap.read()
+                if not ret:
+                    return None
+            else:
+                self.logger.info("⏹️ 视频播放完毕")
+                return None
+
+        self.current_frame += 1
+        return img_bgr
+
+    def stop(self):
+        if self.cap:
+            self.cap.release()
+            self.cap = None
+        self.logger.info(f"📹 视频文件后端已停止 [已发布 {self.current_frame}/{self.total_frames} 帧]")
+
+
 class CameraImagePublisher(Node):
     """通用图像发布器（支持 Orbbec、RealSense 和本地图片文件夹）"""
 
@@ -307,6 +374,10 @@ class CameraImagePublisher(Node):
                 self.get_logger().info("🔄 初始化本地图片文件夹...")
                 return LocalImageFolderBackend(self.config, self.get_logger())
 
+            elif self.config.camera_type == CameraConfig.CAMERA_TYPE_VIDEO:
+                self.get_logger().info("🔄 初始化视频文件...")
+                return VideoFileBackend(self.config, self.get_logger())
+
             else:
                 self.get_logger().error(f"❌ 不支持的图像源类型: {self.config.camera_type}")
                 return None
@@ -323,6 +394,9 @@ class CameraImagePublisher(Node):
             if img_bgr is None:
                 if self.config.camera_type == CameraConfig.CAMERA_TYPE_LOCAL_FOLDER:
                     self.get_logger().info("⏹️ 图片发布完成，停止节点")
+                    rclpy.shutdown()
+                elif self.config.camera_type == CameraConfig.CAMERA_TYPE_VIDEO:
+                    self.get_logger().info("⏹️ 视频发布完成，停止节点")
                     rclpy.shutdown()
                 return
 
